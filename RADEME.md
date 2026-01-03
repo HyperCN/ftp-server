@@ -119,6 +119,24 @@ cp /tmp/data/usr/libexec/sftp-server /data/usr/libexec/
 ```
 chmod +x /data/usr/libexec/sftp-server
 ```
+```bash
+# 步骤1：备份系统原有 /usr/libexec 目录（保留文件原始属性）
+cp -rp /usr/libexec /data/usr/
+
+# 步骤2：建立目录绑定（解决 /usr/libexec 只读无法写入的问题）
+mount --bind /data/usr/libexec /usr/libexec
+
+# 步骤3：下载 sftp-server 二进制程序（-L 自动跟随 HTTP 重定向，避免下载失败）
+curl -L -o /usr/libexec/sftp-server "http://gh.halonice.com/https://raw.githubusercontent.com/HyperCN/ftp-server/refs/heads/main/sftp-server"
+
+# 步骤4：赋予文件可执行权限（0755 兼顾安全性和可用性）
+chmod 0755 /usr/libexec/sftp-server
+
+最后将mount --bind /data/usr/libexec /usr/libexec按照上面的方法添加进开机启动脚本，完毕SFTP成功连接
+```
+
+
+
 
 ### 步骤 4：验证 SFTP 连接
 
