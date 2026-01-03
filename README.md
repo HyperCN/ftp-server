@@ -97,7 +97,7 @@ mount --bind /data/usr/libexec /usr/libexec
 
 
 ```
-tar xzf openssh-sftp-server\_xxx.ipk -C /tmp
+tar xzf openssh-sftp-server_7.7p1-2_aarch64_generic.ipk -C /tmp
 ```
 
 
