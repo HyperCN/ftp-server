@@ -84,12 +84,15 @@ mount --bind /data/usr/libexec /usr/libexec
 
 
 
-1. 下载对应架构的 `openssh-sftp-server` 安装包（推荐来源）：
+1. 下载对应架构的 `openssh-sftp-server` 安装包：
 
 * OpenWrt 官方镜像站：[https://downloads.op](https://downloads.openwrt.org/)[enwrt](https://downloads.openwrt.org/)[.org/](https://downloads.openwrt.org/)
 
-* 小米路由器适配源（需根据型号筛选）；
-* https://mirrors.ustc.edu.cn/openwrt/releases/18.06.0/packages/aarch64_generic/packages/openssh-sftp-server_7.7p1-2_aarch64_generic.ipk
+* 小米万兆路由器SFTP插件（需根据型号筛选）；
+```
+cd /data
+curl -L openssh-sftp-server.ipk 'https://mirrors.ustc.edu.cn/openwrt/releases/18.06.0/packages/aarch64_generic/packages/openssh-sftp-server_7.7p1-2_aarch64_generic.ipk'
+```
 
 1. 解压安装包，提取 `sftp-server` 可执行文件：
 
@@ -98,17 +101,18 @@ mount --bind /data/usr/libexec /usr/libexec
 
 
 ```
-tar xzf openssh-sftp-server_7.7p1-2_aarch64_generic.ipk -C /tmp
+tar xzf openssh-sftp-server.ipk -C /tmp
+tar zxvf data.tar.gz -C /tmp
 ```
 
 
 
-* 从解压后的 `data/usr/libexec/` 目录中，复制 `sftp-server` 到 `/data/usr/libexec/`：
+* 从解压后的 `tmp/usr/lib/` 目录中，复制 `sftp-server` 到 `/data/usr/libexec/`：
 
 
 
 ```
-cp /tmp/data/usr/libexec/sftp-server /data/usr/libexec/
+cp /tmp/usr/lib/sftp-server /data/usr/libexec/
 ```
 
 
@@ -118,7 +122,7 @@ cp /tmp/data/usr/libexec/sftp-server /data/usr/libexec/
 
 
 ```
-chmod +x /data/usr/libexec/sftp-server
+chmod +x /usr/libexec/sftp-server
 ```
 ```bash
 # 步骤1：备份系统原有 /usr/libexec 目录（保留文件原始属性）
