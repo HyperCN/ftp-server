@@ -1,7 +1,47 @@
-手机SSH软件想要管理文件发现连接不上？
-原因是小米路由默认没有安装SFTP
-当我尝试通过正常的 opkg 安装 openssh-sftp-server 时，遇到了一个源 404 的错误。为了解决这个问题，我尝试通过修改 /etc/opkg/distfeeds.conf 文件，将多个源添加进去。然而，最终我发现即使我成功添加了这些源，系统的 /overlay 目录空间不足且只读，无法进行写操作。后来我尝试通过挂载 /data 目录到 /overlay，发现虽然 /data/usr 目录是可写的，但是 /usr 目录依然是只读的。
-在探索的过程中，我在另一台 OpenWrt 设备上找到了一些启发。我发现 sftp 进程是通过 /usr/libexec/sftp-server 文件启动的，但是 /usr 目录只读。于是，我决定在 /data 目录创建一个相同的目录，并将 /usr/libexec 文件复制到 /data 目录。然后，我通过挂载的方式将 /data/usr/libexec 目录挂载到 /usr/libexec，并且将 sftp 的安装包解压提取出其中的 sftp-server 可执行文件，并拷贝到 /usr/libexec 目录中。然而，这些尝试都没有成功，因为发现 sftp 的可执行文件与当前系统的架构不符。最终，经过多次尝试，我找到了一个适用于当前系统的 sftp 版本，成功解决了问题。
+小米路由器部署 SFTP 服务问题排查与解决全流程
+一、问题背景
+手机 SSH 软件连接小米路由器后，仅能执行命令但无法管理文件，核心原因是小米路由器（基于 OpenWrt 定制）默认未预装 openssh-sftp-server 组件。
+二、遇到的核心障碍
+1. 包管理器源失效（opkg 404 错误）
+通过常规命令安装 openssh-sftp-server 时，触发 404 错误：
+bash
+运行
+opkg install openssh-sftp-server
+原因是默认 /etc/opkg/distfeeds.conf 内的软件源失效或与设备版本不匹配。
+2. 系统分区只读且空间不足
+尝试修改 distfeeds.conf 添加多组软件源后，依然无法完成安装。
+核心限制：系统 /overlay 目录空间不足且为只读挂载，这是定制 OpenWrt 设备的常见特性，系统分区（如 /usr）固化，不支持写入操作。
+3. 挂载目录权限不匹配
+尝试将可写的 /data 目录挂载到 /overlay 临时扩容，结果如下：
+/data/usr 目录具备可写权限；
+系统原生 /usr 目录仍为只读状态，无法写入 SFTP 相关执行文件。
+4. 执行文件架构不兼容
+参考另一台正常运行的 OpenWrt 设备，发现 SFTP 服务依赖 /usr/libexec/sftp-server 可执行文件，因此执行以下操作：
+在 /data 目录创建同名目录 /data/usr/libexec；
+将目标 sftp-server 文件拷贝到该目录，并尝试挂载到系统 /usr/libexec；
+解压其他 openssh-sftp-server 安装包提取执行文件，替换后仍无法启动。
+最终定位：提取的 sftp-server 文件与小米路由器的 CPU 架构不匹配。
+三、解决思路与操作步骤
+1. 核心方向
+放弃 opkg 常规安装，转而手动匹配与当前设备架构兼容的 sftp-server 可执行文件。
+2. 关键操作逻辑
+确认设备架构：执行命令查看设备 CPU 架构，确定目标文件的架构类型（如 mipsel、aarch64 等）
+bash
+运行
+uname -m
+寻找匹配版本：从 OpenWrt 官方镜像站或第三方可靠源，下载与设备架构、系统版本对应的 openssh-sftp-server 相关包。
+提取可执行文件：解压下载的安装包，提取核心文件 sftp-server。
+挂载可写目录：将提取的 sftp-server 放入 /data/usr/libexec 目录，通过挂载命令将该目录映射到系统只读的 /usr/libexec：
+bash
+运行
+mount --bind /data/usr/libexec /usr/libexec
+配置并启动 SFTP：修改 SSH 配置文件，启用 SFTP 服务并指定执行文件路径，重启 SSH 服务验证连接。
+四、最终结果
+找到与小米路由器系统架构完全匹配的 sftp-server 版本后，完成挂载与配置，手机 SSH 软件成功通过 SFTP 协议连接路由器，实现文件管理功能。
+五、总结
+定制化 OpenWrt 设备（如小米路由器）存在系统分区只读的特性，常规 opkg 安装可能受限于源失效和分区权限。
+手动部署软件时，架构匹配是核心前提，需先确认设备 CPU 架构再寻找对应文件。
+mount --bind 命令是解决「只读系统目录」与「可写数据目录」映射的关键手段。
 ```bash
 # 步骤1：备份系统原有 /usr/libexec 目录（保留文件原始属性）
 cp -rp /usr/libexec /data/usr/
