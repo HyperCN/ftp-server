@@ -89,6 +89,7 @@ mount --bind /data/usr/libexec /usr/libexec
 * OpenWrt 官方镜像站：[https://downloads.op](https://downloads.openwrt.org/)[enwrt](https://downloads.openwrt.org/)[.org/](https://downloads.openwrt.org/)
 
 * 小米路由器适配源（需根据型号筛选）；
+* https://mirrors.ustc.edu.cn/openwrt/releases/18.06.0/packages/aarch64_generic/packages/openssh-sftp-server_7.7p1-2_aarch64_generic.ipk
 
 1. 解压安装包，提取 `sftp-server` 可执行文件：
 
