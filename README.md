@@ -116,14 +116,13 @@ cp /tmp/usr/lib/sftp-server /data/usr/libexec/
 ```
 
 
-
 1. 赋予执行权限：
-
 
 
 ```
 chmod +x /usr/libexec/sftp-server
 ```
+###另一种方法
 ```bash
 # 步骤1：备份系统原有 /usr/libexec 目录（保留文件原始属性）
 cp -rp /usr/libexec /data/usr/
