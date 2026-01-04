@@ -129,8 +129,87 @@ chmod 0755 /usr/libexec/sftp-server
 
 ## 四、关键补充说明
 
-*开机启动脚本
+* 开机启动脚本
+  1. 先创建自启动脚本
+  ```
+  vim /data/startup_script.sh
+  ```
+  2. 往脚本中添加内容
+     
+  ```
+  #!/bin/sh
+  install() {
+        # Add script to system autostart docker
+        uci set firewall.startup_script=include
+        uci set firewall.startup_script.type='script'
+        uci set firewall.startup_script.path="/data/startup_script.sh"
+        uci set firewall.startup_script.enabled='1'
+        uci commit firewall
+        echo -e "\033[32m  startup_script complete. \033[0m"
+         }
+  uninstall() {
+    # Remove scripts from system autostart
+    uci delete firewall.startup_script
+    uci commit firewall
+    echo -e "\033[33m startup_script  has been removed. \033[0m"
+    }
 
+  startup_script() {
+        # Put your custom script here.
+        echo "Starting custom scripts..."
+     }
+
+  main() {
+    [ -z "$1" ] && startup_script && return
+    case "$1" in
+    install)
+        install
+        ;;
+    uninstall)
+        uninstall
+        ;;
+    *)
+        echo -e "\033[31m Unknown parameter: $1 \033[0m"
+        return 1
+        ;;
+    esac
+   }
+
+  main "$@"
+  ```
+  
+  3. 接着给予脚本执行权限
+     
+  ```
+  cd /data
+  chmod +x startup_script.sh
+  ```
+  4. 执行脚本安装命令，这将会设置防火墙指定启动脚本
+     
+  ```
+  ./startup_script.sh install
+  ```
+  5. 执行完这句install命令，你会发现/etc/config/firewall最后会添加这样一段内容
+     
+  ```
+  config include 'startup_script'
+        option type 'script'
+        option path '/data/startup_script.sh'
+        option enabled '1'
+  ```
+  
+ * 事实上，这和你手动编辑/etc/config/firewall内容效果是一样的，只不过脚本调用了系统的api设置防火墙方法。同理，你调用了uninstall 命令后，这段内容就会被删掉。
+ * 如果不传入参数直接执行./startup_scrip.sh，就会执行脚本里面的startup_script函数。
+ * 创建好这个通用自启动脚本后，你可以在startup_script里面添加任意你想要的启动命令。
+
+  ```
+startup_script() {
+        # SFTP必要步骤
+        (sleep 12; mount --bind /data/usr/libexec /usr/libexec) &
+        # 终端历史记录
+        (sleep 14; mount --bind /data/root /root) &
+}
+  ```
 
 1. **永久挂载注意事项**：`mount --bind` 为临时挂载，重启路由器后失效。若需永久生效，除了修改 `/etc/rc.local`，也可添加到 `/etc/fstab`（需确保 `/data` 目录开机正常挂载）。
 
