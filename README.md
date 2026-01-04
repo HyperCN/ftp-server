@@ -219,40 +219,41 @@ startup_script() {
 
 ```
 #!/bin/sh
-# auto_start.sh - 小米万兆路由器智能挂载（终极优化版）
-# 核心：更低资源占用 + 更精准的挂载检测 + 防误执行
+# auto_start.sh - 小米万兆路由器智能挂载脚本（无日志版）
+# 功能：精准检测/data挂载后执行绑定，防重复挂载，适配路由启动特性
 
-# 配置参数（按需调整）
-TARGET_DIR="/data"
-MAX_WAIT=30          # 最大等待秒数（缩短变量名减少内存占用）
-CHECK_INT=2          # 检测间隔秒数
-WAIT_CNT=0           # 等待计数器（用整数而非运算，更轻量）
+# ==================== 配置参数（可按需调整） ====================
+TARGET_DIR="/data"          # 核心检测目录（小米路由持久化分区）
+MAX_WAIT_TIME=30            # 最大等待时间（秒），超时则退出
+CHECK_INTERVAL=2            # 检测间隔（秒）
+# ================================================================
 
-# 【核心优化1】精准检测/data：仅检查挂载类型+可访问（避免grep全量mount，降低CPU占用）
-while [ $WAIT_CNT -lt $MAX_WAIT ]; do
-    # 替代mount | grep：直接读取/proc/mounts（系统挂载表，更高效）
-    [ -f "/proc/mounts" ] && grep -q "$TARGET_DIR" /proc/mounts && [ -w "$TARGET_DIR" ] && break
-    sleep $CHECK_INT
-    WAIT_CNT=$((WAIT_CNT + CHECK_INT))
+# 初始化等待计时
+wait_seconds=0
+
+# 智能轮询：等待/data分区挂载完成（双重检测：mount列表 + 可写权限）
+while [ $wait_seconds -lt $MAX_WAIT_TIME ]; do
+    # 检测1：/data在mount列表中；检测2：/data可写（避免挂载但不可用）
+    if mount | grep -q "$TARGET_DIR" && [ -w "$TARGET_DIR" ]; then
+        break  # 挂载成功，跳出等待循环
+    fi
+    sleep $CHECK_INTERVAL
+    wait_seconds=$((wait_seconds + CHECK_INTERVAL))
 done
 
-# 超时直接退出（无冗余逻辑）
-[ $WAIT_CNT -ge $MAX_WAIT ] && exit 1
+# 超时保护：/data仍未挂载成功，直接退出（避免无效操作）
+if [ $wait_seconds -ge $MAX_WAIT_TIME ]; then
+    exit 1
+fi
 
-# 【核心优化2】批量处理挂载项（减少重复代码，降低维护成本）
-# 格式：源目录 目标目录
-MOUNT_LIST="
-/data/usr/libexec /usr/libexec
-/data/root /root
-"
+# SFTP目录绑定（防重复：仅当未绑定时报行执行）
+if ! mount | grep -q "/data/usr/libexec /usr/libexec"; then
+    mount --bind /data/usr/libexec /usr/libexec
+fi
 
-# 【核心优化3】极简防重复挂载（用awk精准匹配，避免grep误判）
-for mount_pair in $MOUNT_LIST; do
-    src=$(echo $mount_pair | awk '{print $1}')
-    dest=$(echo $mount_pair | awk '{print $2}')
-    # 仅当目标目录未绑定、且源/目标目录存在时执行挂载
-    [ -d "$src" ] && [ -d "$dest" ] && ! awk '$2=="'"$dest"'"' /proc/mounts | grep -q . && mount --bind $src $dest
-done
+# 终端历史记录目录绑定（防重复）
+if ! mount | grep -q "/data/root /root"; then
+    mount --bind /data/root /root
+fi
 
-exit 0  # 显式退出，符合OpenWRT脚本规范
 ```
