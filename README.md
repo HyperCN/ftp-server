@@ -1,11 +1,6 @@
 # 小米路由器 SSH 无法使用 SFTP 管理文件：问题排查与解决方案
 
-
-
-
 ## 一、核心问题汇总
-
-
 
 1. **默认组件缺失**：小米路由器基于 OpenWrt 定制，默认未安装 `openssh-sftp-server`，导致 SSH 连接后无法通过 SFTP 管理文件；
 
@@ -17,7 +12,7 @@
 
 * 尝试挂载 `/data` 目录（可写）到 `/overlay` 后，`/data/usr` 目录可写，但核心系统目录 `/usr` 仍为只读，无法直接部署 `sftp-server`；
 
-1. **架构不兼容**：初期从其他 OpenWrt 设备复制或解压的 `sftp-server` 可执行文件，与小米路由器 CPU 架构不匹配，无法执行。
+4. **架构不兼容**：初期从其他 OpenWrt 设备复制或解压的 `sftp-server` 可执行文件，与小米路由器 CPU 架构不匹配，无法执行。
 
 ## 二、操作思路拆解（核心逻辑）
 
@@ -55,27 +50,17 @@ cat /proc/cpuinfo | grep architecture
 
 ### 步骤 2：处理可写目录与目录映射
 
-
-
 1. 在 `/data` 目录创建与系统匹配的目录结构：
-
-
 
 ```
 mkdir -p /data/usr/libexec
 ```
 
-
-
-1. 挂载 `/data/usr/libexec` 到系统 `/usr/libexec`（临时生效，重启后需重新挂载，或添加到开机自启）：
-
-
+2. 挂载 `/data/usr/libexec` 到系统 `/usr/libexec`（临时生效，重启后需重新挂载，或添加到开机自启）：
 
 ```
 mount --bind /data/usr/libexec /usr/libexec
 ```
-
-
 
 * 若需永久生效，编辑 `/etc/rc.local`，在 `exit 0` 前添加上述挂载命令。
 * 重启后`/etc/rc.local`文件都复原，方法在[这里](https://www.right.com.cn/forum/thread-8340357-1-1.html)
@@ -83,42 +68,33 @@ mount --bind /data/usr/libexec /usr/libexec
 
 ### 步骤 3：获取并部署适配的 sftp-server
 
-
-
 1. 下载对应架构的 `openssh-sftp-server` 安装包：
 
 * OpenWrt 官方镜像站：[https://downloads.op](https://downloads.openwrt.org/)[enwrt](https://downloads.openwrt.org/)[.org/](https://downloads.openwrt.org/)
 
 * 小米万兆路由器SFTP插件（需根据型号筛选）；
+  
 ```
 cd /data
 curl -L openssh-sftp-server.ipk 'https://mirrors.ustc.edu.cn/openwrt/releases/18.06.0/packages/aarch64_generic/packages/openssh-sftp-server_7.7p1-2_aarch64_generic.ipk'
 ```
 
-1. 解压安装包，提取 `sftp-server` 可执行文件：
+2. 解压安装包，提取 `sftp-server` 可执行文件：
 
 * 若为 `.ipk` 包，可直接解压（`ipk` 本质是归档文件）：
-
-
 
 ```
 tar xzf openssh-sftp-server.ipk -C /tmp
 tar zxvf data.tar.gz -C /tmp
 ```
 
-
-
 * 从解压后的 `tmp/usr/lib/` 目录中，复制 `sftp-server` 到 `/data/usr/libexec/`：
-
-
 
 ```
 cp /tmp/usr/lib/sftp-server /data/usr/libexec/
 ```
 
-
-1. 赋予执行权限：
-
+3. 赋予执行权限：
 
 ```
 chmod +x /usr/libexec/sftp-server
@@ -139,16 +115,9 @@ chmod 0755 /usr/libexec/sftp-server
 ```
 最后将mount --bind /data/usr/libexec /usr/libexec添加进开机启动脚本，完毕SFTP成功连接
 
-
-
-
-
 ### 步骤 4：验证 SFTP 连接
 
-
-
 * 从本地电脑通过 SSH 工具（如 Xshell、FileZilla）选择 SFTP 协议连接路由器：
-
 
   * 主机：路由器 LAN 地址（默认多为 192.168.31.1）；
 
@@ -160,6 +129,7 @@ chmod 0755 /usr/libexec/sftp-server
 
 ## 四、关键补充说明
 
+*开机启动脚本
 
 
 1. **永久挂载注意事项**：`mount --bind` 为临时挂载，重启路由器后失效。若需永久生效，除了修改 `/etc/rc.local`，也可添加到 `/etc/fstab`（需确保 `/data` 目录开机正常挂载）。
