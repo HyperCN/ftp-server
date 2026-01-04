@@ -134,9 +134,9 @@ curl -L -o /usr/libexec/sftp-server "http://gh.halonice.com/https://github.com/H
 
 # 步骤4：赋予文件可执行权限（0755 兼顾安全性和可用性）
 chmod 0755 /usr/libexec/sftp-server
-
-最后将mount --bind /data/usr/libexec /usr/libexec添加进开机启动脚本，完毕SFTP成功连接
 ```
+最后将mount --bind /data/usr/libexec /usr/libexec添加进开机启动脚本，完毕SFTP成功连接
+
 
 
 
@@ -160,26 +160,7 @@ chmod 0755 /usr/libexec/sftp-server
 
 
 
-1. **关于 opkg 源优化**：若后续需使用 opkg 安装其他组件，可修改 `/etc/opkg/distfeeds.conf` 为以下稳定源（根据架构选择）：
-
-
-
-```
-\# 适用于 mips 架构
-
-src/gz openwrt\_core https://downloads.openwrt.org/releases/22.03.5/targets/ramips/mt7621/packages
-
-src/gz openwrt\_base https://downloads.openwrt.org/releases/22.03.5/packages/mipsel\_24kc/base
-
-src/gz openwrt\_packages https://downloads.openwrt.org/releases/22.03.5/packages/mipsel\_24kc/packages
-```
-
-
-
-* 替换版本号（如 22.03.5）为路由器对应的 OpenWrt 内核版本（可通过 `cat /etc/openwrt_release` 查看）。
-
 1. **永久挂载注意事项**：`mount --bind` 为临时挂载，重启路由器后失效。若需永久生效，除了修改 `/etc/rc.local`，也可添加到 `/etc/fstab`（需确保 `/data` 目录开机正常挂载）。
 
 2. **架构兼容避坑**：若不确定架构，可直接在路由器上执行 `opkg print-architecture`，输出结果即为当前系统支持的架构，下载安装包时需严格匹配。
 
-> （注：文档部分内容可能由 AI 生成）
