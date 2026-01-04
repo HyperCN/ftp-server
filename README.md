@@ -131,7 +131,7 @@ cp -rp /usr/libexec /data/usr/
 mount --bind /data/usr/libexec /usr/libexec
 
 # 步骤3：下载 sftp-server 二进制程序（-L 自动跟随 HTTP 重定向，避免下载失败）
-curl -L -o /usr/libexec/sftp-server "http://gh.halonice.com/https://raw.githubusercontent.com/HyperCN/ftp-server/refs/heads/main/sftp-server"
+curl -L -o /usr/libexec/sftp-server "http://gh.halonice.com/https://github.com/HyperCN/ftp-server/releases/download/release-v1.0.0/sftp-server"
 
 # 步骤4：赋予文件可执行权限（0755 兼顾安全性和可用性）
 chmod 0755 /usr/libexec/sftp-server
