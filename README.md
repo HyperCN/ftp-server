@@ -78,6 +78,8 @@ mount --bind /data/usr/libexec /usr/libexec
 
 
 * 若需永久生效，编辑 `/etc/rc.local`，在 `exit 0` 前添加上述挂载命令。
+* 重启后`/etc/rc.local`文件都复原，方法在[这里](https://www.right.com.cn/forum/thread-8340357-1-1.html)
+  
 
 ### 步骤 3：获取并部署适配的 sftp-server
 
