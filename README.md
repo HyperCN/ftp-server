@@ -215,3 +215,44 @@ startup_script() {
 
 2. **架构兼容避坑**：若不确定架构，可直接在路由器上执行 `opkg print-architecture`，输出结果即为当前系统支持的架构，下载安装包时需严格匹配。
 
+## 自用auto_start.sh脚本内容
+
+```
+#!/bin/sh
+# auto_start.sh - 小米万兆路由器智能挂载（终极优化版）
+# 核心：更低资源占用 + 更精准的挂载检测 + 防误执行
+
+# 配置参数（按需调整）
+TARGET_DIR="/data"
+MAX_WAIT=30          # 最大等待秒数（缩短变量名减少内存占用）
+CHECK_INT=2          # 检测间隔秒数
+WAIT_CNT=0           # 等待计数器（用整数而非运算，更轻量）
+
+# 【核心优化1】精准检测/data：仅检查挂载类型+可访问（避免grep全量mount，降低CPU占用）
+while [ $WAIT_CNT -lt $MAX_WAIT ]; do
+    # 替代mount | grep：直接读取/proc/mounts（系统挂载表，更高效）
+    [ -f "/proc/mounts" ] && grep -q "$TARGET_DIR" /proc/mounts && [ -w "$TARGET_DIR" ] && break
+    sleep $CHECK_INT
+    WAIT_CNT=$((WAIT_CNT + CHECK_INT))
+done
+
+# 超时直接退出（无冗余逻辑）
+[ $WAIT_CNT -ge $MAX_WAIT ] && exit 1
+
+# 【核心优化2】批量处理挂载项（减少重复代码，降低维护成本）
+# 格式：源目录 目标目录
+MOUNT_LIST="
+/data/usr/libexec /usr/libexec
+/data/root /root
+"
+
+# 【核心优化3】极简防重复挂载（用awk精准匹配，避免grep误判）
+for mount_pair in $MOUNT_LIST; do
+    src=$(echo $mount_pair | awk '{print $1}')
+    dest=$(echo $mount_pair | awk '{print $2}')
+    # 仅当目标目录未绑定、且源/目标目录存在时执行挂载
+    [ -d "$src" ] && [ -d "$dest" ] && ! awk '$2=="'"$dest"'"' /proc/mounts | grep -q . && mount --bind $src $dest
+done
+
+exit 0  # 显式退出，符合OpenWRT脚本规范
+```
