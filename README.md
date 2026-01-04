@@ -113,7 +113,7 @@ curl -L -o /usr/libexec/sftp-server "http://gh.halonice.com/https://github.com/H
 # 步骤4：赋予文件可执行权限（0755 兼顾安全性和可用性）
 chmod 0755 /usr/libexec/sftp-server
 ```
-最后将mount --bind /data/usr/libexec /usr/libexec添加进开机启动脚本，完毕SFTP成功连接
+* 最后将mount --bind /data/usr/libexec /usr/libexec添加进开机启动脚本，完毕SFTP成功连接
 
 ### 步骤 4：验证 SFTP 连接
 
